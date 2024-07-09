@@ -3,8 +3,6 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const pool = require('./db');
-const auth = require('./authMiddleware');
-
 const router = express.Router();
 
 // Validation middleware
@@ -19,6 +17,7 @@ const loginValidation = [
   body('password').notEmpty().withMessage('Password is required')
 ];
 
+// Register route
 router.post('/register', registerValidation, async (req, res) => {
   // Check for validation errors
   const errors = validationResult(req);
@@ -31,7 +30,6 @@ router.post('/register', registerValidation, async (req, res) => {
 
     // Check if user already exists
     const userExists = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-
     if (userExists.rows.length > 0) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -56,6 +54,7 @@ router.post('/register', registerValidation, async (req, res) => {
   }
 });
 
+// Login route
 router.post('/login', loginValidation, async (req, res) => {
   // Check for validation errors
   const errors = validationResult(req);
@@ -68,7 +67,6 @@ router.post('/login', loginValidation, async (req, res) => {
 
     // Check if user exists
     const user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-
     if (user.rows.length === 0) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -83,21 +81,6 @@ router.post('/login', loginValidation, async (req, res) => {
     const token = jwt.sign({ id: user.rows[0].id }, process.env.JWT_SECRET);
 
     res.json({ token });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-router.get('/me', auth, async (req, res) => {
-  try {
-    const user = await pool.query('SELECT id, name, email FROM users WHERE id = $1', [req.user.id]);
-    
-    if (user.rows.length === 0) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.json(user.rows[0]);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
