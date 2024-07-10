@@ -15,9 +15,9 @@ app.use(cors({
 app.use(express.json());
 
 // Routes
+
 app.use('/api/users', userRoutes);
 app.use('/api/todos', todoRoutes);
-
 // Test database connection
 pool.query('SELECT NOW()', (err, res) => {
   if (err) {
